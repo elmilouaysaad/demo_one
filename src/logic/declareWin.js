@@ -33,10 +33,10 @@ function isSuivi(group) {
     gaps++;
     if (gaps > jokers.length) return false;
   }
-  let includesA = real.some(c => c.rank === "ace");
-  if (includesA && real.length >= 3) {
-    let idxs = real.map(c => rIndex(c.rank));
-    if (Math.min(...idxs) === 0 && Math.max(...idxs) >= 2) return false;
+  // ✔ Only forbid wrap K-A-2
+  const values = sorted.map(c => rIndex(c.rank));
+  if (values.includes(0) && values.includes(12) && values.includes(1)) {
+    return false;
   }
   return true;
 }
@@ -47,10 +47,19 @@ function isFreeSuivi(group) {
 
 export function canDeclareWin(groups) {
   let total = groups.reduce((s,g)=>s+g.length,0);
-  if (total !== 13) return false;
-  let validGroups = groups.every(g => isTirsi(g) || isSuivi(g));
-  if (!validGroups) return false;
-  if (!groups.some(isFreeTirsi)) return false;
-  if (!groups.some(isFreeSuivi)) return false;
-  return true;
+  if (total !== 13)
+    return { success: false, reason: ` You must use all 13 cards (you used ${total}).` };
+
+  let invalidGroups = groups.filter(g => !isTirsi(g) && !isSuivi(g));
+  if (invalidGroups.length > 0)
+    return { success: false, reason: ` One or more groups are not valid Tirsi or Suivi.` };
+
+  if (!groups.some(isFreeTirsi))
+    return { success: false, reason: ` You must have at least 1 FREE Tirsi (no Joker).` };
+
+  if (!groups.some(isFreeSuivi))
+    return { success: false, reason: ` You must have at least 1 FREE Suivi (no Joker).` };
+
+  return { success: true, reason: ` Valid Rami! You used all 13 cards with at least one Free Tirsi and one Free Suivi.` };
 }
+

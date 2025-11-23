@@ -187,19 +187,32 @@ export default function GameBoard() {
           marginBottom: 10,
           cursor: "pointer"
         }}
-        onClick={() => setMelds([...melds, []])}
+        onClick={() => setMelds([[], ...melds])}
       >
         New Goup
       </button>
 
       {melds.map((group, gIndex) => (
         <PlayerMeldGroup
-          key={gIndex}
-          group={group}
-          gIndex={gIndex}
-          melds={melds}
-          setMelds={setMelds}
-        />
+  key={gIndex}
+  group={group}
+  gIndex={gIndex}
+  onRemove={() => {
+    // Put cards back into hand when deleting meld
+    const ps = [...players];
+    const me = ps[0];
+
+    me.hand = [...me.hand, ...group];
+
+    // Remove meld
+    const newMelds = [...melds];
+    newMelds.splice(gIndex, 1);
+
+    setPlayers(ps);
+    setMelds(newMelds);
+  }}
+/>
+
       ))}
 
       {current === 0 && (
@@ -214,12 +227,15 @@ export default function GameBoard() {
             borderRadius: 8
           }}
           onClick={() => {
-            if (canDeclareWin(melds)) {
-              alert("🎉 Valid Rami! You win!");
-              startGame();
-            } else {
-              alert("Invalid melds! Must include 1 Free Tirsi + 1 Free Suivi.");
-            }
+            const result = canDeclareWin(melds);
+
+if (result.success) {
+  alert(result.reason);
+  startGame();
+} else {
+  alert(result.reason);
+}
+
           }}
         >
           Declare Win
